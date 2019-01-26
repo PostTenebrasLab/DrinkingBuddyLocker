@@ -26,9 +26,9 @@ bool HttpBuyTransaction::send(char* badge, int product, unsigned long time)
     hashBuilder.print(productString);
     hashBuilder.print(timeString);
     
-    StaticJsonBuffer<JSON_OBJECT_SIZE(5)+12> jsonBuffer;
+    StaticJsonBuffer<JSON_OBJECT_SIZE(6)+12> jsonBuffer;
     JsonObject& json = jsonBuffer.createObject();
-    json["Tid"] = "5";   //////////---------------------------------------> Change HERE
+    json["Tid"] = "3";   //////////---------------------------------------> Change HERE
     json["Badge"] = badge;
     json["Hash"] = hashBuilder.getHash();
     json["Product"] = productString;
@@ -48,15 +48,36 @@ bool HttpBuyTransaction::sendForBalance(char* badge, unsigned long time)
     hashBuilder.print(badge);
     hashBuilder.print(timeString);
     
-    StaticJsonBuffer<JSON_OBJECT_SIZE(4)+12> jsonBuffer;
+    StaticJsonBuffer<JSON_OBJECT_SIZE(6)+12> jsonBuffer;
     JsonObject& json = jsonBuffer.createObject();
-    json["Tid"] = "5";   //////////---------------------------------------> Change HERE
+    json["Tid"] = "3";   //////////---------------------------------------> Change HERE
     json["Badge"] = badge;
     json["Hash"] = hashBuilder.getHash();
     json["Time"] = timeString;
     json.printTo(buffer, sizeof(buffer));
 
     return http.query("POST " API_PATH "/balance", buffer, sizeof(buffer));
+}
+
+bool HttpBuyTransaction::sendForLocker(char* badge, unsigned long time)
+{
+    char timeString[11];
+    
+    snprintf(timeString, sizeof(timeString), "%lu", time);
+
+    HashBuilder hashBuilder;
+    hashBuilder.print(badge);
+    hashBuilder.print(timeString);
+    
+    StaticJsonBuffer<JSON_OBJECT_SIZE(6)+12> jsonBuffer;
+    JsonObject& json = jsonBuffer.createObject();
+    json["Tid"] = "3";   //////////---------------------------------------> Change HERE
+    json["Badge"] = badge;
+    json["Hash"] = hashBuilder.getHash();
+    json["Time"] = timeString;
+    json.printTo(buffer, sizeof(buffer));
+
+    return http.query("POST " API_PATH "/locker", buffer, sizeof(buffer));
 }
 
 bool HttpBuyTransaction::sendForUser(char* badge, unsigned long time)
@@ -71,28 +92,18 @@ bool HttpBuyTransaction::sendForUser(char* badge, unsigned long time)
     
     StaticJsonBuffer<JSON_OBJECT_SIZE(4)> jsonBuffer;
     JsonObject& json = jsonBuffer.createObject();
-    json["Tid"] = "5";   //////////---------------------------------------> Change HERE
+    json["Tid"] = "3";   //////////---------------------------------------> Change HERE
     json["Badge"] = badge;
     json["Hash"] = hashBuilder.getHash();
     json["Time"] = timeString;
     json.printTo(buffer, sizeof(buffer));
+    
 
     return http.query("POST " API_PATH "/user", buffer, sizeof(buffer));
 }
 
-bool HttpBuyTransaction::sendForFood()
-{
-    StaticJsonBuffer<JSON_OBJECT_SIZE(1)> jsonBuffer;
-    JsonObject& json = jsonBuffer.createObject();
-    json["Tid"] = "5";
-    json.printTo(buffer, sizeof(buffer));
-    
-    return http.query("GET " API_PATH "/foodcount",buffer,sizeof(buffer));
-}
-
 bool HttpBuyTransaction::parse()
 {
-    Serial.println("Start parse");
     StaticJsonBuffer<JSON_OBJECT_SIZE(4)+JSON_ARRAY_SIZE(2)> jsonBuffer;
 
     JsonObject& root = jsonBuffer.parseObject(buffer);
@@ -104,15 +115,18 @@ bool HttpBuyTransaction::parse()
     JsonArray& messageArray = root["Message"];
     if (!messageArray.success()) return false;
     
-    messages[0] = messageArray[0];
-    messages[1] = messageArray[1];
-
+    //messages[0] = messageArray[0];
+    //messages[1] = messageArray[1];
+    messages.clear();
+    for (int i = 0; i < messageArray.size(); i++)
+      messages.emplace_back(messageArray.get<char*>(i));
+      
     time = root["Time"];
     if (time == NULL) {Serial.println("No time sent"); error = "No time sent"; return false;}
 
     hash = root["Hash"];
     if (hash == NULL) {Serial.println("No hash sent"); error = "No hash sent"; return false;}
-    Serial.print("Parse oK");
+
     return true;
 }
 
@@ -120,8 +134,8 @@ bool HttpBuyTransaction::validate()
 {
     HashBuilder hashBuilder;
     hashBuilder.print(melody);
-    hashBuilder.print(messages[0]);
-    hashBuilder.print(messages[1]);
+    hashBuilder.print(messages[0].c_str());
+    hashBuilder.print(messages[1].c_str());
     hashBuilder.print(time);
 
     if(strcasecmp(hash, hashBuilder.getHash()) == 0)

@@ -24,6 +24,10 @@ public:
     {
         return send(badge, product, time) && parse() && validate();
     }
+    bool performLocker(char* badge, unsigned long time)
+    {
+        return sendForLocker(badge, time) && parse() && validate();
+    }
 
     bool getBalance(char* badge, unsigned long time)
     {
@@ -34,27 +38,24 @@ public:
     {
         return sendForUser(badge, time) && parse() && validate();
     }
-    bool getFood()
-    {
-        return sendForFood() && parse();
-    }
     const char* getMelody() { return melody; }
     const char* getError() { return error; }
-    const char* getMessage(int i) { return messages[i]; }
-
+    //const char* getMessage(int i) { return messages[i]; }
+  std::vector<std::string> getMessage()  { return messages; }; 
 private:
 
     bool send(char*, int, unsigned long);
+    bool sendForLocker(char*, unsigned long);
     bool sendForBalance(char*, unsigned long);
     bool sendForUser(char*, unsigned long);
-    bool sendForFood();
     bool parse();
     bool validate();
 
     HttpClient& http;
     char buffer[150];
     const char* hash;
-    const char* messages[2];
+    //const char* messages[2];
+    std::vector<std::string> messages;
     const char* melody;
     const char* time;
     const char* error;

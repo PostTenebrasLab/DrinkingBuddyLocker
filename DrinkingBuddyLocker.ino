@@ -1,7 +1,4 @@
 #include <SPI.h>
-#include <Wire.h> //i2c oled
-//#include <Adafruit_GFX.h> //oled graphics
-//#include <Adafruit_SSD1306.h> //oled
 #include <ArduinoJson.h>
 #include <MFRC522.h>
 #include <DNSServer.h>
@@ -36,26 +33,28 @@ Adafruit_SSD1306 display(OLED_RESET);
 #endif
 
 */
+bool getLocker(char* badge);
+void configModeCallback (WiFiManager *myWiFiManager);
+
 #define RESTART_RFID 30000UL
 unsigned long lastRestartTime = millis();
 
-/*
-void oledPrint(const char* myText, bool clearOled = true)
-{
-  if(clearOled)
-  {
-    display.clearDisplay();
-    display.setCursor(0,0);
-  }
-  display.println(myText);
-  display.display();
-  
-}
-*/
+int lastOpenLockTime;
+const long GRACE_PERIOD = 20000;  //20 secs
 
 LockerInterface display;
 
+enum iface_state_machine {
+  IFACE_STATE_STARTUP,
+  IFACE_STATE_SWIPE,
+  IFACE_STATE_MENU
+};
+
+iface_state_machine iface_state = IFACE_STATE_STARTUP;
+
+
 void setup() {
+    iface_state = IFACE_STATE_STARTUP;
     Serial.begin(115200);
 
     Serial.println("Init Display");
@@ -63,14 +62,7 @@ void setup() {
 
   
     Serial.println("Starting display");
-    /*
-    display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 64x48)
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.setCursor(0,0);
-    oledPrint("Start wifi", true);
-    */
+
     Serial.println("Starting wifi...");
     display.status("Starting wifi...");
     sound.begin();
@@ -86,11 +78,7 @@ void setup() {
     //here  "AutoConnectAP"
     //and goes into a blocking loop awaiting configuration
     if(!wifiManager.autoConnect()) {
-      /*
-      display.clearDisplay();
-      display.println("Failed to connect");
-      display.display();
-      */
+
       Serial.println("failed to connect and hit timeout");
       //reset and try again, or maybe put it to deep sleep    
       ESP.reset();
@@ -111,128 +99,107 @@ void setup() {
     oledPrint("Ready :)");
     getFoodCount();
 */
-    display.swipe_prompt();
+    
 
-    delay(2000);
+   // delay(2000);
     
-    display.set_selection(std::vector<std::string>{"Ta","Mere","En","String","A","La","Migros"});
+   // display.set_selection(std::vector<std::string>{"Ta","Mere","En","String","A","La","Migros"});
     
-    display.show_selector(0);
-    display.status("Select Locker");
+   // display.show_selector(0);
+   // display.status("Select Locker");
+
+    iface_state = IFACE_STATE_SWIPE;
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
 
-  int sel = 0;
-  if (display.check_selection(sel))
+  switch (iface_state)
   {
-    sprintf(strbuf, "selected: %d", sel);
-
-    display.status(strbuf);
-  }
-  
-  
-/*
-  if((lastRestartTime + RESTART_RFID) < millis())   //we're having troubles with the reader,,maybe restarting would help.
-  {
-    lastRestartTime = millis();
-//    rfid.restart();
-//    Serial.print("Restarting the RFID reader at: "); Serial.println(lastRestartTime);
-  }
-*/
-  /*
-  char* badge = rfid.tryRead();
-  if (badge)
-  {
-    sound.play("b1");
-    lastBadge = badge;
-    Serial.print("badge found ");
-    Serial.println(badge);
-    Serial.print("Last badge changed to: ");
-    Serial.println(lastBadge);
-    oledPrint("Badge: ");
-    oledPrint(lastBadge,false);
-    buyFood(badge);
-    // ignore all waiting badge to avoid unintended double buy
-    while (rfid.tryRead())
+    case IFACE_STATE_SWIPE:
     {
-      Serial.println("rfid.tryRead");
-      delay(1000);
-    }
-    //oledPrint("Ready :)");
-    
-  } //end if badge
-    */
-  
+      // swipe state
+      char* badge = rfid.tryRead();
+      if (badge)
+      { 
+        sound.play("b1");
+        lastBadge = badge;
+        Serial.print("badge found ");
+        Serial.println(badge);
+        Serial.print("Last badge changed to: ");
+        Serial.println(lastBadge);
+      
+        // ignore all waiting badge to avoid unintended double buy
+        while (rfid.tryRead())
+        {
+          Serial.println("rfid.tryRead");
+          delay(1000);
+        }
+        if (getLocker(badge))
+        {
+          
+          iface_state = IFACE_STATE_MENU;
+          display.show_selector(0);
+          return;
+        }
+        // move to menu selector state
+      } //end if badge
 
+      // Display Swipe
+      display.swipe_prompt();
+    }
+    case IFACE_STATE_MENU:
+    {
+      int sel = 0;
+      if (display.check_selection(sel))
+      {
+        sprintf(strbuf, "selected: %d", sel);
+
+        display.status(strbuf);
+      }
+    }
+  }
 }
 
 
-/*
-bool buyFood(char* badge)
+
+bool getLocker(char* badge)
 {
-  HttpBuyTransaction buyFoodTransaction(http);
+  HttpBuyTransaction lockerTransaction(http);
 
-  int BEER_ID = 42;
-  int FOOD_ID = 5;
-
-  Serial.println("Starting to get food...");
-  if (!buyFoodTransaction.perform(badge, FOOD_ID, clock.getUnixTime()))
+  Serial.println("Starting to get lockers...");
+  if (!lockerTransaction.performLocker(badge, myclock.getUnixTime()))
   {
-    Serial.println("Error getting food...");
-    oledPrint("Error: 1");
+    Serial.println("Error getting lockers...");
     return false;
   }
 
-  Serial.println("End get food...");
-  
-  if (strcmp(buyFoodTransaction.getMessage(0), "ERROR") == 0)
+  Serial.println("End get lockers...");
+ // Serial.println(lockerTransaction.getMessage(0));
+ // Serial.println(lockerTransaction.getMessage(1));
+ std::vector<std::string> message = lockerTransaction.getMessage();
+ 
+  if (message.size() > 0 && message[0] == "ERROR")
   {
     lastBadge = "";
-    Serial.print("Unknown badge or not enough credit");
-    oledPrint("No credit ?");
+    Serial.print("Unknown badge or no lockers");
 
-    //sound.play(buyFoodTransaction.getMelody());
+    //sound.play(lockerTransaction.getMelody());
     return false;
   }
   else
   {
-    Serial.println("OK food");
-    oledPrint("Bon app!:)");
-    sound.play(buyFoodTransaction.getMelody());
-    delay(2000);
-    getFoodCount();
+    Serial.println("OK locker");
+    digitalWrite(PIN_RELAY, HIGH); // turn on relay with voltage HIGH
+    lastOpenLockTime = millis();
+    sound.play(lockerTransaction.getMelody());
     //PLAY SOUND
+    display.set_selection(message);
     
     return true;
   }
 }
-*/
 
-/*
-bool getFoodCount()
-{
-  HttpBuyTransaction buyFoodTransaction(http);
-
-  Serial.println("Getting food count");
-  if (!buyFoodTransaction.getFood())
-  {
-    Serial.println("Error getting food count...");
-    oledPrint("Error: food count");
-    return false;
-  }
-
-  Serial.println("End get food count...");
-  
-  Serial.print("People bought today: ");Serial.println(buyFoodTransaction.getMessage(1));
-  oledPrint("Food paid today: ");
-  oledPrint(buyFoodTransaction.getMessage(1),false);
-  
-  
-  return true;
-}
-*/
 void configModeCallback (WiFiManager *myWiFiManager) {
   //oledPrint("Plz config WiFi");
   Serial.println("Entered config mode");

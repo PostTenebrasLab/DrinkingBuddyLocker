@@ -14,7 +14,6 @@
 void Sound::begin()
 {
     pinMode(PIN_BUZZER, OUTPUT);
-    digitalWrite(PIN_BUZZER, LOW);
 }
 
 void Sound::play(const char* melody)

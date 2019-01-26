@@ -37,7 +37,15 @@ using namespace fs;
 
 LockerInterface::LockerInterface()
 {
+  swipe_x1 = WIDTH/2;
+  swipe_x2 = WIDTH/2;
+  swipe_y1 = HEIGHT/2;
+  swipe_y2 = HEIGHT/2;
 
+  swipe_x1_v = -3;
+  swipe_y1_v = -2;
+  swipe_x2_v = 4;
+  swipe_y2_v = -3;
 }
 
 void LockerInterface::init()
@@ -84,8 +92,15 @@ void LockerInterface::swipe_prompt()
 
   tft.setTextColor(TFT_GREEN, TFT_BLACK);
   tft.setFreeFont(&FreeSansBold24pt7b);
-  tft.drawString("SWIPE", 120,120);
-  tft.drawString("CARD", 120,166);
+  
+  tft.drawString("SWIPE", swipe_x1,swipe_y1);
+  tft.drawString("CARD", swipe_x2,swipe_y2);
+
+  swipe_x1 = (swipe_x1 + swipe_x1_v)%WIDTH;
+  swipe_y1 = (swipe_y1 + swipe_y1_v)%HEIGHT;
+
+  swipe_x2 = (swipe_x2 + swipe_x2_v)%WIDTH;
+  swipe_y2 = (swipe_y2 + swipe_y2_v)%HEIGHT;
   
 }
 

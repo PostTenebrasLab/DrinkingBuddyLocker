@@ -33,4 +33,15 @@ private:
   std::vector<int> buttons_idx;
 
   int displayed_page = 0;
+
+  int swipe_x1;
+  int swipe_x2;
+  int swipe_y1;
+  int swipe_y2;
+  
+  int swipe_x1_v;
+  int swipe_x2_v;
+  int swipe_y1_v;
+  int swipe_y2_v;
+  
 };

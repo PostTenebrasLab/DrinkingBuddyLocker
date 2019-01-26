@@ -117,7 +117,7 @@ bool HttpClient::query(const char* request, char* content, int maxContentSize)
     //if (!client.connect(serverIP, SERVER_PORT))
     {
         Serial.print("Connect failed...serverIP: ");
-        Serial.println(serverIP);
+        Serial.println(SERVER_IP);
         return false;
     }
     
