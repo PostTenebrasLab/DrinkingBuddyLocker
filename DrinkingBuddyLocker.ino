@@ -1,7 +1,7 @@
 #include <SPI.h>
 #include <Wire.h> //i2c oled
-#include <Adafruit_GFX.h> //oled graphics
-#include <Adafruit_SSD1306.h> //oled
+//#include <Adafruit_GFX.h> //oled graphics
+//#include <Adafruit_SSD1306.h> //oled
 #include <ArduinoJson.h>
 #include <MFRC522.h>
 #include <DNSServer.h>
@@ -18,23 +18,24 @@
 #include "Sound.h"
 
 static RfidReader rfid;
-static Clock clock;
+static Clock myclock;
 static Sound sound;
 
 static HttpClient http;
 
 char* lastBadge = "";
-
+/*
 #define OLED_RESET 0  // GPIO0
 Adafruit_SSD1306 display(OLED_RESET);
 #if (SSD1306_LCDHEIGHT != 48)
 #error("Height incorrect, please get a good version of Adafruit_SSD1306.h! from github mcauser branch 64x48");
 #endif
 
-
+*/
 #define RESTART_RFID 30000UL
 unsigned long lastRestartTime = millis();
 
+/*
 void oledPrint(const char* myText, bool clearOled = true)
 {
   if(clearOled)
@@ -46,19 +47,24 @@ void oledPrint(const char* myText, bool clearOled = true)
   display.display();
   
 }
+*/
+
 void setup() {
     Serial.begin(115200);
     Serial.println("Starting display");
+    /*
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 64x48)
     display.clearDisplay();
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.setCursor(0,0);
     oledPrint("Start wifi", true);
+    */
     Serial.println("Starting wifi...");
+    
     sound.begin();
     sound.play("a1");    
-    //WiFiManager
+        //WiFiManager
     //Local intialization. Once its business is done, there is no need to keep it around
     WiFiManager wifiManager;
     //reset settings - for testing
@@ -69,16 +75,17 @@ void setup() {
     //here  "AutoConnectAP"
     //and goes into a blocking loop awaiting configuration
     if(!wifiManager.autoConnect()) {
+      /*
       display.clearDisplay();
       display.println("Failed to connect");
       display.display();
-      
+      */
       Serial.println("failed to connect and hit timeout");
       //reset and try again, or maybe put it to deep sleep
       ESP.reset();
       delay(1000);
     } 
-    oledPrint("Connected! :)", false);
+    //oledPrint("Connected! :)", false);
     Serial.println("Wifi connected...yay :)");
 
     Serial.println("Starting RFID...");
@@ -88,9 +95,10 @@ void setup() {
     sound.play("b1");
     sound.play("a1");
 
+/*
     oledPrint("Ready :)");
     getFoodCount();
-
+*/
     
 
 }
@@ -98,15 +106,15 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
 
-
+/*
   if((lastRestartTime + RESTART_RFID) < millis())   //we're having troubles with the reader,,maybe restarting would help.
   {
     lastRestartTime = millis();
 //    rfid.restart();
 //    Serial.print("Restarting the RFID reader at: "); Serial.println(lastRestartTime);
   }
-
-  
+*/
+  /*
   char* badge = rfid.tryRead();
   if (badge)
   {
@@ -128,13 +136,13 @@ void loop() {
     //oledPrint("Ready :)");
     
   } //end if badge
-    
+    */
   
 
 }
 
 
-
+/*
 bool buyFood(char* badge)
 {
   HttpBuyTransaction buyFoodTransaction(http);
@@ -173,7 +181,9 @@ bool buyFood(char* badge)
     return true;
   }
 }
+*/
 
+/*
 bool getFoodCount()
 {
   HttpBuyTransaction buyFoodTransaction(http);
@@ -195,8 +205,9 @@ bool getFoodCount()
   
   return true;
 }
+*/
 void configModeCallback (WiFiManager *myWiFiManager) {
-  oledPrint("Plz config WiFi");
+  //oledPrint("Plz config WiFi");
   Serial.println("Entered config mode");
   Serial.println(WiFi.softAPIP());
   //if you used auto generated SSID, print it
