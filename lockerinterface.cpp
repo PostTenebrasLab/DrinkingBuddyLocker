@@ -89,7 +89,7 @@ void LockerInterface::swipe_prompt()
   
 }
 
-void LockerInterface::set_selection(std::vector<int> selection_)
+void LockerInterface::set_selection(std::vector<std::string> selection_)
 {
   selection.clear();
   selection = selection_;
@@ -124,7 +124,7 @@ void LockerInterface::show_selector(int page)
     {
       int y1 = (bt_idx +1)* offset + y0;
       
-      sprintf(strbuf, "%d", selection[i]);
+      sprintf(strbuf, "%s", selection[i].c_str());
       
       buttons.emplace_back(TFT_eSPI_Button());
       buttons_idx.emplace_back(i);
@@ -136,7 +136,7 @@ void LockerInterface::show_selector(int page)
     {
       buttons.emplace_back(TFT_eSPI_Button());
       buttons_idx.emplace_back(DOWN);
-      buttons.back().initButton(&tft, x1,y0, width, height, TFT_WHITE, TFT_DARKGREY, TFT_WHITE, "Up", 0);
+      buttons.back().initButton(&tft, x1,y0, width, height, TFT_WHITE, TFT_LIGHTGREY, TFT_DARKGREY, "Up", 0);
       bt_idx++;
     }
 
@@ -144,7 +144,7 @@ void LockerInterface::show_selector(int page)
     {
       buttons.emplace_back(TFT_eSPI_Button());
       buttons_idx.emplace_back(UP);
-      buttons.back().initButton(&tft, x1, y0+(num_per_page+1)*offset, width, height, TFT_WHITE, TFT_DARKGREY, TFT_WHITE, "Down", 0);
+      buttons.back().initButton(&tft, x1, y0+(num_per_page+1)*offset, width, height, TFT_WHITE, TFT_LIGHTGREY, TFT_DARKGREY, "Down", 0);
       bt_idx++;
     }
   for ( auto & b : buttons)

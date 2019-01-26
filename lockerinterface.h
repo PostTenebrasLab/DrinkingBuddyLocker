@@ -19,7 +19,7 @@ public:
   
   void clear_status_bar();
   void swipe_prompt();
-  void set_selection(std::vector<int> selection_);
+  void set_selection(std::vector<std::string> selection_);
   void show_selector(int page);
   bool check_selection(int & selection);
 private:
@@ -28,7 +28,7 @@ private:
   TFT_eSPI tft;
   char strbuf[200];
   
-  std::vector<int> selection;
+  std::vector<std::string> selection;
   std::vector<TFT_eSPI_Button> buttons;
   std::vector<int> buttons_idx;
 

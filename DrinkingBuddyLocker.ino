@@ -115,8 +115,7 @@ void setup() {
 
     delay(2000);
     
-    //display.set_selection(std::vector<int>{1,2,3,4});
-    display.set_selection(std::vector<int>{1,2,3,4,5,6,7,8,9,10,11,12});
+    display.set_selection(std::vector<std::string>{"Ta","Mere","En","String","A","La","Migros"});
     
     display.show_selector(0);
     display.status("Select Locker");
