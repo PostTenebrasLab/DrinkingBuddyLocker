@@ -56,6 +56,7 @@ LockerInterface display;
 void setup() {
     Serial.begin(115200);
 
+    Serial.println("Init Display");
     display.init();
 
   
@@ -108,8 +109,15 @@ void setup() {
     oledPrint("Ready :)");
     getFoodCount();
 */
-    
+    display.swipe_prompt();
 
+    delay(2000);
+    
+    //display.set_selection(std::vector<int>{1,2,3,4});
+    display.set_selection(std::vector<int>{1,2,3,4,5});
+    
+    display.show_selector(0);
+//    display.status("Select Locker");
 }
 
 void loop() {
