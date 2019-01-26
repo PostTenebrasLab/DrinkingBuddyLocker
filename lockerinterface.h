@@ -4,29 +4,6 @@
 #include <string>
 #include <vector>
 
-class Button
-{
-public:
-  Button(  TFT_eSPI & tft, int x, int y, int width, int height, std::string label, int value);
-  
-  bool in_bounds(int x, int y);
-
-  void draw();
-
-  int value;  
-private:
-  int x1;
-  int x2;
-  int y1;
-  int y2;
-  int x;
-  int y;
-  std::string label;
-
-
-  TFT_eSPI & tft;  
-};
-
 class LockerInterface
 {
 public:
@@ -52,5 +29,8 @@ private:
   char strbuf[200];
   
   std::vector<int> selection;
-  std::vector<Button> buttons;
+  std::vector<TFT_eSPI_Button> buttons;
+  std::vector<int> buttons_idx;
+
+  int displayed_page = 0;
 };

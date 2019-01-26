@@ -25,6 +25,8 @@ static Sound sound;
 
 static HttpClient http;
 
+char strbuf[200];
+
 char* lastBadge = "";
 /*
 #define OLED_RESET 0  // GPIO0
@@ -90,7 +92,7 @@ void setup() {
       display.display();
       */
       Serial.println("failed to connect and hit timeout");
-      //reset and try again, or maybe put it to deep sleep
+      //reset and try again, or maybe put it to deep sleep    
       ESP.reset();
       delay(1000);
     } 
@@ -114,15 +116,24 @@ void setup() {
     delay(2000);
     
     //display.set_selection(std::vector<int>{1,2,3,4});
-    display.set_selection(std::vector<int>{1,2,3,4,5});
+    display.set_selection(std::vector<int>{1,2,3,4,5,6,7,8,9,10,11,12});
     
     display.show_selector(0);
-//    display.status("Select Locker");
+    display.status("Select Locker");
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
 
+  int sel = 0;
+  if (display.check_selection(sel))
+  {
+    sprintf(strbuf, "selected: %d", sel);
+
+    display.status(strbuf);
+  }
+  
+  
 /*
   if((lastRestartTime + RESTART_RFID) < millis())   //we're having troubles with the reader,,maybe restarting would help.
   {

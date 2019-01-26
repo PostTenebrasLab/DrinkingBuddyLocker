@@ -8,7 +8,11 @@
 
 
 #define CALIBRATION_FILE "/TouchCalData1"
+// Set REPEAT_CAL to true instead of false to run calibration
+// again, otherwise it will only be done once.
+// Repeat calibration if you change the screen rotation.
 #define REPEAT_CAL false
+
 // Numeric display box size and location
 #define DISP_X 1
 #define DISP_Y 10
@@ -25,41 +29,11 @@ const int STATUS_HEIGHT = 20;
 const int STATUS_X = WIDTH/2; // Centred on this
 const int STATUS_Y = HEIGHT - STATUS_HEIGHT;
 
+const int DOWN = -1;
+const int UP = -2;
 
 using namespace fs;
 
-
-Button::Button(  TFT_eSPI & tft_, int x1_, int x2_, int y1_, int y2_, std::string label_, int value_):
-  tft(tft_)
-{
-  x = (x1_ + x2_)/2;
-  y = (y1_ + y2_)/2;
-  
-  // compute bounds
-  x1 = x1_;
-  x2 = x2_;
-
-  y1 = y1_;
-  y2 = y2_;
-  label = label_;
-  value = value_;
-}
-
-bool Button::in_bounds(int x_, int y_)
-{
-  return (x1 < x_) && (x2 > x_) && (y1 < y_) && (y2 > y_);
-}
-
-void Button::draw()
-{
-  tft.fillRect(x1,y1,x2-x1,y2-y1, TFT_DARKGREY);
-  tft.drawRect(x1,y1,x2-x1,y2-y1, TFT_WHITE);
-
-  tft.setTextColor(TFT_WHITE, TFT_DARKGREY);
-  tft.setTextDatum(CC_DATUM);
-  tft.setFreeFont(&FreeSansBold12pt7b);
-  tft.drawString(label.c_str(), x, y);
-}
 
 LockerInterface::LockerInterface()
 {
@@ -75,7 +49,7 @@ void LockerInterface::init()
   tft.setRotation(0);
 
   // Calibrate the touch screen and retrieve the scaling factors
-  //touch_calibrate();
+  touch_calibrate();
 
   // Clear the screen
   tft.fillScreen(TFT_BLACK);
@@ -123,38 +97,58 @@ void LockerInterface::set_selection(std::vector<int> selection_)
 
 void LockerInterface::show_selector(int page)
 {
+  
   Serial.println("Show selector");
   tft.fillRect(0, 0, WIDTH, HEIGHT - STATUS_HEIGHT, TFT_BLACK);
-   
+  displayed_page = page;
   buttons.clear();
+  buttons_idx.clear();
   const int num_per_page = 3;
-  
+  tft.setFreeFont(&FreeSansBold12pt7b);
   int num_dat = selection.size();
-  int start_idx = num_dat/num_per_page*page;
+  int start_idx = num_per_page*page;
   start_idx = (start_idx > num_dat)?(num_dat/num_per_page-1)*num_per_page:start_idx;
   int stop_idx = start_idx + num_per_page;
   stop_idx = (stop_idx > num_dat)?num_dat:stop_idx;
 
   int bt_idx = 0;
-  int x1 = WIDTH/3;
-  int x2 = 2*WIDTH/3;
-  int y0 = 50;
-  int height = 30;
+  int x1 = WIDTH/2;
+  int width = WIDTH/2;
+  int y0 = 30;
+  int height = 48;
   int offset = 50;
   sprintf(strbuf, "start: %d stop: %d num: %d", start_idx, stop_idx, num_dat);
-  status(strbuf);
+  
   Serial.println(strbuf);
   for (int i = start_idx; i < stop_idx; i++)
     {
-      int y1 = bt_idx * offset + y0;
-      int y2 = y1 + height;
-      sprintf(strbuf, "%d", selection[i]); 
-      buttons.emplace_back(Button(tft, x1, x2, y1, y2, std::string(strbuf), selection[i]));
+      int y1 = (bt_idx +1)* offset + y0;
+      
+      sprintf(strbuf, "%d", selection[i]);
+      
+      buttons.emplace_back(TFT_eSPI_Button());
+      buttons_idx.emplace_back(i);
+      buttons.back().initButton(&tft, x1,y1, width, height, TFT_WHITE, TFT_DARKGREY, TFT_WHITE, strbuf, 0);
       bt_idx++;
     }
 
+  if (start_idx > 0)
+    {
+      buttons.emplace_back(TFT_eSPI_Button());
+      buttons_idx.emplace_back(DOWN);
+      buttons.back().initButton(&tft, x1,y0, width, height, TFT_WHITE, TFT_DARKGREY, TFT_WHITE, "Up", 0);
+      bt_idx++;
+    }
+
+  if (stop_idx < num_dat)
+    {
+      buttons.emplace_back(TFT_eSPI_Button());
+      buttons_idx.emplace_back(UP);
+      buttons.back().initButton(&tft, x1, y0+(num_per_page+1)*offset, width, height, TFT_WHITE, TFT_DARKGREY, TFT_WHITE, "Down", 0);
+      bt_idx++;
+    }
   for ( auto & b : buttons)
-    b.draw();
+    b.drawButton();
   
 }
 
@@ -165,19 +159,39 @@ bool LockerInterface::check_selection(int & sel)
 
   // check if we have a click
   bool pressed = tft.getTouch(&t_x, &t_y);
-
+  bool found = false;
   if (pressed)
     {
+      sprintf(strbuf, "pressed %d %d", t_x, t_y);
+      status(strbuf);
       // check if we are in a region
-      for (auto & b : buttons)
+      for (int i = 0; i < buttons.size(); i++)
 	{
-	  if (b.in_bounds(t_x,t_y))
+      
+	  if (buttons[i].contains(t_x,t_y))
 	    {
-	      sel = b.value;
-	    return true;
+	      
+	      buttons[i].press(true);
+	      buttons[i].drawButton();
+	      sel = buttons_idx[i];
+	      found = true;
 	    }
 	}
+ 
+    }
 
+  if (found )
+    {
+      if (sel == DOWN)
+	{
+	  show_selector(displayed_page - 1);
+	}
+      else if (sel == UP)
+	{
+	  show_selector(displayed_page + 1);
+	}
+      else
+	return true;
     }
   return false;
 }
