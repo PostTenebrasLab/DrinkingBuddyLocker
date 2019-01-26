@@ -17,6 +17,8 @@
 #include "RfidReader.h"
 #include "Sound.h"
 
+#include "lockerinterface.h"
+
 static RfidReader rfid;
 static Clock myclock;
 static Sound sound;
@@ -49,8 +51,14 @@ void oledPrint(const char* myText, bool clearOled = true)
 }
 */
 
+LockerInterface display;
+
 void setup() {
     Serial.begin(115200);
+
+    display.init();
+
+  
     Serial.println("Starting display");
     /*
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 64x48)
@@ -61,7 +69,7 @@ void setup() {
     oledPrint("Start wifi", true);
     */
     Serial.println("Starting wifi...");
-    
+    display.status("Starting wifi...");
     sound.begin();
     sound.play("a1");    
         //WiFiManager
@@ -86,15 +94,16 @@ void setup() {
       delay(1000);
     } 
     //oledPrint("Connected! :)", false);
-    Serial.println("Wifi connected...yay :)");
-
+    Serial.println("Wifi connected...)");
+    display.status("Wifi connected...");
     Serial.println("Starting RFID...");
+    display.status("Starting RFID...");
     SPI.begin();           // Init SPI bus
     //mfrc522.PCD_Init();    // Init MFRC522
     rfid.begin();
     sound.play("b1");
     sound.play("a1");
-
+    display.status("Ready");
 /*
     oledPrint("Ready :)");
     getFoodCount();
