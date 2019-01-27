@@ -6,6 +6,7 @@
 #include <ESP8266WebServer.h>
 #include "WiFiManager.h"          //https://github.com/tzapu/WiFiManager
 
+#include <PubSubClient.h>
 
 #include "Clock.h"
 #include "HttpBuyTransaction.h"
@@ -21,6 +22,13 @@ static Clock myclock;
 static Sound sound;
 
 static HttpClient http;
+
+//MQTT stuff
+//const char* mqtt_server = "mqtt.lan.posttenebraslab.ch";
+const char* mqtt_server = "185.250.59.200";
+WiFiClient espClient;
+PubSubClient client(espClient);
+
 
 char strbuf[200];
 
@@ -39,8 +47,11 @@ void configModeCallback (WiFiManager *myWiFiManager);
 #define RESTART_RFID 30000UL
 unsigned long lastRestartTime = millis();
 
-int lastOpenLockTime;
+unsigned long last_open_request = millis();
+unsigned long menu_timeout = 20000;
 const long GRACE_PERIOD = 20000;  //20 secs
+
+
 
 LockerInterface display;
 
@@ -92,6 +103,9 @@ void setup() {
     SPI.begin();           // Init SPI bus
     //mfrc522.PCD_Init();    // Init MFRC522
     rfid.begin();
+
+    client.setServer(mqtt_server, 1883);
+    
     sound.play("b1");
     sound.play("a1");
     display.status("Ready");
@@ -140,6 +154,7 @@ void loop() {
           
           iface_state = IFACE_STATE_MENU;
           display.show_selector(0);
+          last_open_request = millis();
           return;
         }
         // move to menu selector state
@@ -150,12 +165,34 @@ void loop() {
     }
     case IFACE_STATE_MENU:
     {
+      // checkfor timeout
+      if (millis() - last_open_request > menu_timeout)
+        iface_state = IFACE_STATE_SWIPE;
+        
       int sel = 0;
       if (display.check_selection(sel))
       {
+        if (sel == -3)
+        {
+          // cancel button
+          iface_state = IFACE_STATE_SWIPE;
+          return;
+        }
         sprintf(strbuf, "selected: %d", sel);
 
+        // PLACEHOLDER, send out locker open command.
+
+        if (!client.connected()) {
+            reconnect();
+        }
+        //client.loop();
+        delay(500);
+
+        client.publish("Locker", "0A");
+  
         display.status(strbuf);
+
+        iface_state = IFACE_STATE_SWIPE;
       }
     }
   }
@@ -191,7 +228,7 @@ bool getLocker(char* badge)
   {
     Serial.println("OK locker");
     digitalWrite(PIN_RELAY, HIGH); // turn on relay with voltage HIGH
-    lastOpenLockTime = millis();
+    
     sound.play(lockerTransaction.getMelody());
     //PLAY SOUND
     display.set_selection(message);
@@ -206,4 +243,22 @@ void configModeCallback (WiFiManager *myWiFiManager) {
   Serial.println(WiFi.softAPIP());
   //if you used auto generated SSID, print it
   Serial.println(myWiFiManager->getConfigPortalSSID());
+}
+
+void reconnect() {
+  // Loop until we're reconnected
+  while (!client.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    // Attempt to connect
+    if (client.connect("ESP8266Client","ptllocker1","P0stL0ck")) {
+      Serial.println("connected");
+      client.subscribe("Locker");
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      // Wait 5 seconds before retrying
+      delay(5000);
+    }
+  }
 }

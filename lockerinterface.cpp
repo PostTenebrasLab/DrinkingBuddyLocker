@@ -31,6 +31,7 @@ const int STATUS_Y = HEIGHT - STATUS_HEIGHT;
 
 const int DOWN = -1;
 const int UP = -2;
+const int CANCEL_BUTT = -3;
 
 using namespace fs;
 
@@ -128,10 +129,10 @@ void LockerInterface::show_selector(int page)
 
   int bt_idx = 0;
   int x1 = WIDTH/2;
-  int width = WIDTH/2;
+  int width = WIDTH*0.8;
   int y0 = 30;
-  int height = 48;
-  int offset = 50;
+  int height = 40;
+  int offset = 45;
   sprintf(strbuf, "start: %d stop: %d num: %d", start_idx, stop_idx, num_dat);
   
   Serial.println(strbuf);
@@ -162,6 +163,13 @@ void LockerInterface::show_selector(int page)
       buttons.back().initButton(&tft, x1, y0+(num_per_page+1)*offset, width, height, TFT_WHITE, TFT_LIGHTGREY, TFT_DARKGREY, "Down", 0);
       bt_idx++;
     }
+
+  {
+    buttons.emplace_back(TFT_eSPI_Button());
+    buttons_idx.emplace_back(CANCEL_BUTT);
+    buttons.back().initButton(&tft, x1, y0+(num_per_page+2)*offset, width, height, TFT_WHITE, TFT_BLACK, TFT_RED, "CANCEL", 0);
+    bt_idx++;
+  }
   for ( auto & b : buttons)
     b.drawButton();
   
@@ -204,6 +212,10 @@ bool LockerInterface::check_selection(int & sel)
       else if (sel == UP)
 	{
 	  show_selector(displayed_page + 1);
+	}
+      else if (sel == CANCEL_BUTT)
+	{
+	  return true;
 	}
       else
 	return true;
