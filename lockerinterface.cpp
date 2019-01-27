@@ -224,38 +224,46 @@ void LockerInterface::status(const std::string & msg)
 
 void LockerInterface::touch_calibrate()
 {
-  uint16_t calData[5];
+  uint16_t calData[5] = {365, 3386, 401, 3375, 6};
   uint8_t calDataOK = 0;
 
   // check file system exists
-  if (!SPIFFS.begin()) {
-    Serial.println("Formating file system");
-    SPIFFS.format();
-    SPIFFS.begin();
-  }
+  // if (!SPIFFS.begin()) {
+  //   Serial.println("Formating file system");
+  //   SPIFFS.format();
+  //   SPIFFS.begin();
+  // }
 
   // check if calibration file exists and size is correct
-  if (SPIFFS.exists(CALIBRATION_FILE)) {
-    if (REPEAT_CAL)
-    {
-      // Delete if we want to re-calibrate
-      SPIFFS.remove(CALIBRATION_FILE);
-    }
-    else
-    {
-      File f = SPIFFS.open(CALIBRATION_FILE, "r");
-      if (f) {
-        if (f.readBytes((char *)calData, 14) == 14)
-          calDataOK = 1;
-        f.close();
-      }
-    }
-  }
+  // if (SPIFFS.exists(CALIBRATION_FILE)) {
+  //   Serial.println("Found calibration file");
+  //   if (REPEAT_CAL)
+  //   {
+  //     Serial.println("Remove Cal File and restart");
+  //     // Delete if we want to re-calibrate
+  //     SPIFFS.remove(CALIBRATION_FILE);
+  //   }
+  //   else
+  //   {
+  //     Serial.println("Open Calfile");
+  //     File f = SPIFFS.open(CALIBRATION_FILE, "r");
+  //     if (f) {
+  // 	Serial.println("File opened");
+  //       if (f.readBytes((char *)calData, 14) == 14)
+  //         calDataOK = 1;
+  //       f.close();
+  //     }
+  //   }
+  // }
 
+  calDataOK = 1;
   if (calDataOK && !REPEAT_CAL) {
+    Serial.println("Setting Calibratiob from file");
     // calibration data valid
     tft.setTouch(calData);
-  } else {
+  }
+  /*
+  else {
     // data not valid so recalibrate
     tft.fillScreen(TFT_BLACK);
     tft.setCursor(20, 0);
@@ -277,12 +285,17 @@ void LockerInterface::touch_calibrate()
 
     tft.setTextColor(TFT_GREEN, TFT_BLACK);
     tft.println("Calibration complete!");
-
+    Serial.println("Calibration complete");
+    sprintf(strbuf, "%d %d %d %d %d", calData[0], calData[1], calData[2], calData[3], calData[4]);
+    Serial.println(strbuf);
     // store data
     File f = SPIFFS.open(CALIBRATION_FILE, "w");
     if (f) {
+     
+      Serial.println("Calibration storage file open");
       f.write((const unsigned char *)calData, 14);
       f.close();
     }
   }
+  */
 }

@@ -104,7 +104,7 @@ bool HttpBuyTransaction::sendForUser(char* badge, unsigned long time)
 
 bool HttpBuyTransaction::parse()
 {
-    StaticJsonBuffer<JSON_OBJECT_SIZE(4)+JSON_ARRAY_SIZE(2)> jsonBuffer;
+    StaticJsonBuffer<JSON_OBJECT_SIZE(4)+JSON_ARRAY_SIZE(20)> jsonBuffer;
 
     JsonObject& root = jsonBuffer.parseObject(buffer);
     if (!root.success()) {Serial.println("JSON error"); error = "JSON error"; return false;}
@@ -134,8 +134,8 @@ bool HttpBuyTransaction::validate()
 {
     HashBuilder hashBuilder;
     hashBuilder.print(melody);
-    hashBuilder.print(messages[0].c_str());
-    hashBuilder.print(messages[1].c_str());
+    for (auto & m : messages)
+      hashBuilder.print(m.c_str());
     hashBuilder.print(time);
 
     if(strcasecmp(hash, hashBuilder.getHash()) == 0)
