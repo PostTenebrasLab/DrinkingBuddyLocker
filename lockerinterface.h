@@ -22,6 +22,7 @@ public:
   void set_selection(std::vector<std::string> selection_);
   void show_selector(int page);
   bool check_selection(int & selection);
+  
 private:
   void touch_calibrate();
   

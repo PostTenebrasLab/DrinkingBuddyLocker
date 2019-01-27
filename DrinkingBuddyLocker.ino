@@ -14,7 +14,7 @@
 #include "HttpSyncTransaction.h"
 #include "RfidReader.h"
 #include "Sound.h"
-
+#include "mqttconf.h"
 #include "lockerinterface.h"
 
 static RfidReader rfid;
@@ -51,7 +51,7 @@ unsigned long last_open_request = millis();
 unsigned long menu_timeout = 20000;
 const long GRACE_PERIOD = 20000;  //20 secs
 
-
+std::vector<std::string> locker_selection;
 
 LockerInterface display;
 
@@ -188,8 +188,8 @@ void loop() {
         //client.loop();
         delay(500);
 
-        client.publish("Locker", "0A");
-  
+        client.publish("Locker", locker_selection[sel].c_str());
+ 
         display.status(strbuf);
 
         iface_state = IFACE_STATE_SWIPE;
@@ -231,6 +231,7 @@ bool getLocker(char* badge)
     
     sound.play(lockerTransaction.getMelody());
     //PLAY SOUND
+    locker_selection = message;
     display.set_selection(message);
     
     return true;
@@ -250,7 +251,7 @@ void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
-    if (client.connect("ESP8266Client","ptllocker1","P0stL0ck")) {
+    if (client.connect("ESP8266Client",MQTTUNAME, MQTTPASS)) {
       Serial.println("connected");
       client.subscribe("Locker");
     } else {
