@@ -123,6 +123,8 @@ void setup() {
    // display.status("Select Locker");
 
     iface_state = IFACE_STATE_SWIPE;
+      
+    display.clear_swipe();
 }
 
 void loop() {
@@ -167,7 +169,11 @@ void loop() {
     {
       // checkfor timeout
       if (millis() - last_open_request > menu_timeout)
+      {
+        display.clear_swipe();
         iface_state = IFACE_STATE_SWIPE;
+        return;
+      }
         
       int sel = 0;
       if (display.check_selection(sel))
@@ -175,12 +181,13 @@ void loop() {
         if (sel == -3)
         {
           // cancel button
+          display.clear_swipe();
           iface_state = IFACE_STATE_SWIPE;
           return;
         }
         sprintf(strbuf, "selected: %d", sel);
 
-        // PLACEHOLDER, send out locker open command.
+        // send out locker open command.
 
         if (!client.connected()) {
             reconnect();
@@ -191,7 +198,7 @@ void loop() {
         client.publish("Locker", locker_selection[sel].c_str());
  
         display.status(strbuf);
-
+        display.clear_swipe();
         iface_state = IFACE_STATE_SWIPE;
       }
     }

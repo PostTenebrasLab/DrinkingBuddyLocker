@@ -35,6 +35,10 @@ const int CANCEL_BUTT = -3;
 
 using namespace fs;
 
+#define IWIDTH  140
+#define IHEIGHT 100
+
+
 
 LockerInterface::LockerInterface()
 {
@@ -65,7 +69,8 @@ void LockerInterface::init()
 
   splash();
 
-
+  create_swipe_prompt();
+  clear_swipe();
 }
 
 void LockerInterface::splash()
@@ -86,23 +91,43 @@ void LockerInterface::clear_status_bar()
   tft.fillRect(HEIGHT - STATUS_HEIGHT, HEIGHT - STATUS_Y, WIDTH, HEIGHT, TFT_BLACK);
 }
 
+void LockerInterface::clear_swipe()
+{
+  tft.fillRect(0, 0, WIDTH, HEIGHT, TFT_BLACK);
+}
+
+void LockerInterface::create_swipe_prompt() {
+  img1 = new TFT_eSprite(&tft);
+
+  img1->createSprite(IWIDTH, IHEIGHT);
+
+    // Draw keypad background
+  //tft.fillRect(0, 0, WIDTH, HEIGHT - STATUS_HEIGHT, TFT_DARKGREY);
+
+  img1->setTextColor(TFT_GREEN, TFT_BLACK);
+  img1->setFreeFont(&FreeSansBold12pt7b);
+  img1->setTextWrap(false);
+  img1->setCursor(10, 50);  // Print text at xpos
+  img1->print("SWIPE");
+  img1->setCursor(50, 80);  // Print text at xpos
+  img1->print("CARD");
+}
 void LockerInterface::swipe_prompt()
 {
-  // Draw keypad background
-  tft.fillRect(0, 0, WIDTH, HEIGHT - STATUS_HEIGHT, TFT_DARKGREY);
 
-  tft.setTextColor(TFT_GREEN, TFT_BLACK);
-  tft.setFreeFont(&FreeSansBold24pt7b);
-  
-  tft.drawString("SWIPE", swipe_x1,swipe_y1);
-  tft.drawString("CARD", swipe_x2,swipe_y2);
 
-  swipe_x1 = (swipe_x1 + swipe_x1_v)%WIDTH;
-  swipe_y1 = (swipe_y1 + swipe_y1_v)%HEIGHT;
+  img1->pushSprite(swipe_x1, swipe_y1);
 
-  swipe_x2 = (swipe_x2 + swipe_x2_v)%WIDTH;
-  swipe_y2 = (swipe_y2 + swipe_y2_v)%HEIGHT;
-  
+
+  swipe_x1 = (swipe_x1 + swipe_x1_v + WIDTH)%WIDTH;
+  swipe_y1 = (swipe_y1 + swipe_y1_v + HEIGHT)%HEIGHT;
+
+
+  if (swipe_x1 == 0 || swipe_x1 == WIDTH - IWIDTH)
+    swipe_x1_v = -swipe_x1_v;
+  if (swipe_y1 == 0 || swipe_y1 == HEIGHT - IHEIGHT)
+    swipe_y1_v = -swipe_y1_v;
+
 }
 
 void LockerInterface::set_selection(std::vector<std::string> selection_)

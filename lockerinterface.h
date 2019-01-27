@@ -19,6 +19,8 @@ public:
   
   void clear_status_bar();
   void swipe_prompt();
+  void create_swipe_prompt();
+  void clear_swipe();
   void set_selection(std::vector<std::string> selection_);
   void show_selector(int page);
   bool check_selection(int & selection);
@@ -44,5 +46,5 @@ private:
   int swipe_x2_v;
   int swipe_y1_v;
   int swipe_y2_v;
-  
+  TFT_eSprite * img1;
 };
